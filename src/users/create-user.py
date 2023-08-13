@@ -1,4 +1,4 @@
-from keycloak import KeycloakOpenID, KeycloakAdmin, KeycloakOpenIDConnection
+from keycloak import KeycloakOpenIDConnection, KeycloakAdmin, KeycloakOpenID
 from kubernetes import client, config
 import sys
 import base64
@@ -6,11 +6,14 @@ import base64
 input_params = {
     'server_url': 'http://donggyu-keycloak.taco-cat.xyz/auth/',
     'target_realm_name': 'test3',
-    'target_client_id': 'k8s-oidc7',
     'keycloak_credential_secret_name': 'keycloak',
     'keycloak_credential_secret_namespace': 'keycloak',
 
-    'redirect_uri': 'aaaa',
+    'user_name': 'user1',
+    'user_password': 'user1',
+    'user_email': 'test@gmail.com',
+    'user_first_name': '',
+    'user_last_name': '',
 }
 
 
@@ -32,8 +35,7 @@ def get_secret(k8s_client, secret_name, secret_namespace):
     decoded_data = base64.b64decode(encoded_data).decode('utf-8')
     return decoded_data
 
-
-k8s_client = get_kubernetes_api(local=True)
+k8s_client = get_kubernetes_api(local=False)
 
 try:
     secret_name = input_params['keycloak_credential_secret_name']
@@ -59,7 +61,6 @@ keycloak_openid = KeycloakOpenID(
     client_id='admin-cli',
     realm_name='master',
 )
-
 try:
     keycloak_admin = KeycloakAdmin(connection=keycloak_connection)
     print(f'login to {input_params["server_url"]} success')
@@ -69,32 +70,30 @@ except Exception as e:
     sys.exit(1)
 
 try:
-    try:
-        hashed_client_id = keycloak_admin.get_client_id(input_params['target_client_id'])
-        print(f'hashed_client_id of client id "{input_params["target_client_id"]}" is "{hashed_client_id}"')
-        client = keycloak_admin.get_client(client_id=hashed_client_id)
-        existing_redirect_uris = client['redirectUris']
-    except Exception as inner_e:
-        print(inner_e)
-        raise Exception(f'get client id "{input_params["target_client_id"]} failed')
+    user_name = input_params['user_name']
+    user_password = input_params['user_password']
+    user_email = input_params['user_email']
+    user_first_name = input_params['user_first_name']
+    user_last_name = input_params['user_last_name']
 
-    try:
-        redirect_uri = input_params['redirect_uri']
-        if redirect_uri in existing_redirect_uris:
-            print(f'"{redirect_uri}" already exists in client "{input_params["target_client_id"]}"')
-        else:
-            existing_redirect_uris.append(redirect_uri)
-            client['redirectUris'] = existing_redirect_uris
-            keycloak_admin.update_client(client_id=hashed_client_id, payload=client)
-            print(f'append "{redirect_uri}" in client "{input_params["target_client_id"]}" success')
-    except Exception as inner_e:
-        print(inner_e)
-        raise Exception('update client on keycloak failed')
+    keycloak_admin.create_user({
+        'username': user_name,
+        'email': user_email,
+        'enabled': True,
+        'firstName': user_first_name,
+        'lastName': user_last_name,
+        'credentials': [{
+            'type': 'password',
+            'value': user_password,
+            'temporary': False,
+        }],
+    })
 
+    print(f'create user {user_name} success')
     keycloak_openid.logout(keycloak_admin.connection.token['refresh_token'])
-
 except Exception as e:
     print(e)
-    print(f'append redirect uri "{input_params["redirect_uri"]}" to client "{input_params["target_client_id"]}" failed')
+    print(f'create user {user_name} failed')
     keycloak_openid.logout(keycloak_admin.connection.token['refresh_token'])
     sys.exit(1)
+

@@ -5,11 +5,9 @@ import base64
 
 input_params = {
     'server_url': 'http://donggyu-keycloak.taco-cat.xyz/auth/',
-    'target_realm_name': 'test3',
+    'target_realm_name': 'test4',
     'keycloak_credential_secret_name': 'keycloak',
     'keycloak_credential_secret_namespace': 'keycloak',
-
-    'user_name': 'user1',
 }
 
 
@@ -31,7 +29,7 @@ def get_secret(k8s_client, secret_name, secret_namespace):
     decoded_data = base64.b64decode(encoded_data).decode('utf-8')
     return decoded_data
 
-k8s_client = get_kubernetes_api(local=True)
+k8s_client = get_kubernetes_api()
 
 try:
     secret_name = input_params['keycloak_credential_secret_name']
@@ -46,8 +44,7 @@ except Exception as e:
 keycloak_connection = KeycloakOpenIDConnection(
     server_url=input_params['server_url'],
     client_id='admin-cli',
-    realm_name=input_params['target_realm_name'],
-    user_realm_name='master',
+    realm_name='master',
     username='admin',
     password=secret,
     verify=True,
@@ -57,6 +54,7 @@ keycloak_openid = KeycloakOpenID(
     client_id='admin-cli',
     realm_name='master',
 )
+
 try:
     keycloak_admin = KeycloakAdmin(connection=keycloak_connection)
     print(f'login to {input_params["server_url"]} success')
@@ -66,25 +64,16 @@ except Exception as e:
     sys.exit(1)
 
 try:
-    user_name = input_params['user_name']
-    try:
-        user_id = keycloak_admin.get_user_id(user_name)
-        print(f'user id of {user_name}: {user_id}')
-    except Exception as e:
-        print(e)
-        raise Exception(f'failed to get user id of {user_name}')
-
-    try:
-        keycloak_admin.delete_user(user_id)
-        print(f'delete user {user_name} success')
-    except Exception as e:
-        print(e)
-        raise Exception(f'failed to remove user {user_name} on keycloak')
-
+    keycloak_admin.create_realm({
+        'realm': input_params['target_realm_name'],
+        'enabled': True,
+        'displayName': input_params['target_realm_name'],
+    })
+    print(f'create realm {input_params["target_realm_name"]} success')
     keycloak_openid.logout(keycloak_admin.connection.token['refresh_token'])
 except Exception as e:
     print(e)
-    print(f'delete user {user_name} failed')
+    print('create realm failed')
     keycloak_openid.logout(keycloak_admin.connection.token['refresh_token'])
     sys.exit(1)
 

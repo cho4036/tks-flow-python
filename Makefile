@@ -2,7 +2,7 @@ all: push
 
 VERSION = v0.1.0
 TAG = $(VERSION)
-PREFIX = harbor-cicd.taco-cat.xyz/dev/dev-donggyu
+PREFIX = harbor-cicd.taco-cat.xyz/dev/python-keycloak-cli
 
 DOCKERFILEPATH =  build
 DOCKERFILE = Dockerfile.keycloak-cli

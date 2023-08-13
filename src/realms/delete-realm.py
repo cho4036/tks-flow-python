@@ -1,19 +1,13 @@
 from keycloak import KeycloakOpenIDConnection, KeycloakAdmin, KeycloakOpenID
-import requests
 from kubernetes import client, config
 import sys
 import base64
-import json
 
 input_params = {
     'server_url': 'http://donggyu-keycloak.taco-cat.xyz/auth/',
-    'target_realm_name': 'test3',
-    'target_client_id': 'k8s-oidc6',
+    'target_realm_name': 'test4',
     'keycloak_credential_secret_name': 'keycloak',
     'keycloak_credential_secret_namespace': 'keycloak',
-
-    'client_role_name': 'admin',
-    'user_name': 'user1',
 }
 
 
@@ -35,8 +29,7 @@ def get_secret(k8s_client, secret_name, secret_namespace):
     decoded_data = base64.b64decode(encoded_data).decode('utf-8')
     return decoded_data
 
-
-k8s_client = get_kubernetes_api(local=True)
+k8s_client = get_kubernetes_api()
 
 try:
     secret_name = input_params['keycloak_credential_secret_name']
@@ -51,8 +44,7 @@ except Exception as e:
 keycloak_connection = KeycloakOpenIDConnection(
     server_url=input_params['server_url'],
     client_id='admin-cli',
-    realm_name=input_params['target_realm_name'],
-    user_realm_name='master',
+    realm_name='master',
     username='admin',
     password=secret,
     verify=True,
@@ -70,41 +62,13 @@ except Exception as e:
     print(f'login to {input_params["server_url"]} failed')
     sys.exit(1)
 
-
 try:
-    try:
-        hashed_client_id = keycloak_admin.get_client_id(client_id=input_params["target_client_id"])
-        print(f'hashed_client_id of client id "{input_params["target_client_id"]}" is "{hashed_client_id}"')
-    except Exception as inner_e:
-        print(inner_e)
-        raise Exception(f'get client id "{input_params["target_client_id"]} failed')
-
-    try:
-        idOfClientRole = keycloak_admin.get_client_role_id(client_id=hashed_client_id,
-                                                           role_name=input_params["client_role_name"])
-        print(f'client role id in client id "{input_params["target_client_id"]}" is "{idOfClientRole}"')
-    except Exception as inner_e:
-        print(inner_e)
-        raise Exception(f'get client role "{input_params["client_role_name"]}" failed')
-
-    try:
-        idOfUser = keycloak_admin.get_user_id(username=input_params["user_name"])
-        print(f'id of user "{input_params["user_name"]}" is "{idOfUser}"')
-    except Exception as inner_e:
-        print(inner_e)
-        raise Exception(f'get user "{input_params["user_name"]}" failed')
-
-    try:
-        keycloak_admin.delete_client_roles_of_user(client_id=hashed_client_id, user_id=idOfUser,
-                                                   roles=[{'id': idOfClientRole, 'name': input_params["client_role_name"]}])
-        print(f'un-assign client role "{input_params["client_role_name"]}" to user "{input_params["user_name"]}" success')
-    except Exception as inner_e:
-        print(inner_e)
-        raise Exception('un-assign client role to user on keycloak failed')
-
+    keycloak_admin.delete_realm(realm_name=input_params['target_realm_name'])
+    print(f'delete realm {input_params["target_realm_name"]} success')
     keycloak_openid.logout(keycloak_admin.connection.token['refresh_token'])
 except Exception as e:
     print(e)
-    print(f'un-assign client role "{input_params["client_role_name"]}" to user "{input_params["user_name"]}" failed')
+    print(f'delete realm {input_params["target_realm_name"]} failed')
     keycloak_openid.logout(keycloak_admin.connection.token['refresh_token'])
     sys.exit(1)
+

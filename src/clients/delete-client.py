@@ -1,4 +1,5 @@
-from keycloak import KeycloakOpenIDConnection, KeycloakAdmin, KeycloakOpenID
+from keycloak import KeycloakOpenID, KeycloakAdmin, KeycloakOpenIDConnection
+import requests
 from kubernetes import client, config
 import sys
 import base64
@@ -6,14 +7,9 @@ import base64
 input_params = {
     'server_url': 'http://donggyu-keycloak.taco-cat.xyz/auth/',
     'target_realm_name': 'test3',
+    'target_client_id': 'test-client',
     'keycloak_credential_secret_name': 'keycloak',
     'keycloak_credential_secret_namespace': 'keycloak',
-
-    'user_name': 'user1',
-    'user_password': 'user1',
-    'user_email': 'test@gmail.com',
-    'user_first_name': '',
-    'user_last_name': '',
 }
 
 
@@ -35,7 +31,26 @@ def get_secret(k8s_client, secret_name, secret_namespace):
     decoded_data = base64.b64decode(encoded_data).decode('utf-8')
     return decoded_data
 
-k8s_client = get_kubernetes_api(local=True)
+
+def delete_client(url, realm_name, client_id, token):
+    # if url end with '/', remove it
+    if url[-1] == '/':
+        url = url[:-1]
+    path = f'/admin/realms/{realm_name}/clients/{client_id}'
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token['access_token'],
+    }
+    response = requests.delete(url + path, headers=headers)
+    if response.status_code == 204:
+        print(f'delete client {client_id} success')
+    elif response.status_code == 404:
+        raise Exception(response.text)
+    else:
+        raise Exception(response.text)
+
+
+k8s_client = get_kubernetes_api(local=False)
 
 try:
     secret_name = input_params['keycloak_credential_secret_name']
@@ -56,11 +71,13 @@ keycloak_connection = KeycloakOpenIDConnection(
     password=secret,
     verify=True,
 )
+
 keycloak_openid = KeycloakOpenID(
     server_url=input_params['server_url'],
     client_id='admin-cli',
     realm_name='master',
 )
+
 try:
     keycloak_admin = KeycloakAdmin(connection=keycloak_connection)
     print(f'login to {input_params["server_url"]} success')
@@ -70,30 +87,28 @@ except Exception as e:
     sys.exit(1)
 
 try:
-    user_name = input_params['user_name']
-    user_password = input_params['user_password']
-    user_email = input_params['user_email']
-    user_first_name = input_params['user_first_name']
-    user_last_name = input_params['user_last_name']
+    try:
+        hashed_client_id = keycloak_admin.get_client_id(client_id=input_params["target_client_id"])
+        print(f'hashed_client_id of client id "{input_params["target_client_id"]}" is "{hashed_client_id}"')
+    except Exception as inner_e:
+        print(inner_e)
+        raise Exception('get client failed')
 
-    keycloak_admin.create_user({
-        'username': user_name,
-        'email': user_email,
-        'enabled': True,
-        'firstName': user_first_name,
-        'lastName': user_last_name,
-        'credentials': [{
-            'type': 'password',
-            'value': user_password,
-            'temporary': False,
-        }],
-    })
+    try:
+        delete_client(
+            url=input_params['server_url'],
+            realm_name=input_params['target_realm_name'],
+            client_id=hashed_client_id,
+            token=keycloak_admin.connection.token,
+        )
+    except Exception as inner_e:
+        print(inner_e)
+        raise Exception('delete client on keycloak failed')
 
-    print(f'create user {user_name} success')
     keycloak_openid.logout(keycloak_admin.connection.token['refresh_token'])
+
 except Exception as e:
     print(e)
-    print(f'create user {user_name} failed')
+    print(f'delete client "{input_params["target_client_id"]}" failed')
     keycloak_openid.logout(keycloak_admin.connection.token['refresh_token'])
     sys.exit(1)
-

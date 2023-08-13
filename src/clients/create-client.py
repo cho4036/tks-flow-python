@@ -62,7 +62,7 @@ def create_client(url, realm_name, client_id, token):
         raise Exception(response.text)
 
 
-k8s_client = get_kubernetes_api(local=True)
+k8s_client = get_kubernetes_api(local=False)
 
 try:
     secret_name = input_params['keycloak_credential_secret_name']

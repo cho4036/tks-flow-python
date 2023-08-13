@@ -33,7 +33,7 @@ def get_secret(k8s_client, secret_name, secret_namespace):
     return decoded_data
 
 
-k8s_client = get_kubernetes_api(local=True)
+k8s_client = get_kubernetes_api(local=False)
 
 try:
     secret_name = input_params['keycloak_credential_secret_name']
@@ -68,7 +68,6 @@ except Exception as e:
     print(f'login to {input_params["server_url"]} failed')
     sys.exit(1)
 
-
 try:
     try:
         hashed_client_id = keycloak_admin.get_client_id(input_params['target_client_id'])
@@ -80,20 +79,22 @@ try:
         raise Exception(f'get client id "{input_params["target_client_id"]} failed')
 
     try:
-        if input_params['redirect_uri'] not in existing_redirect_uris:
-            print(f'redirect-uri "{input_params["redirect_uri"]}" not exist in client "{hashed_client_id}"')
+        redirect_uri = input_params['redirect_uri']
+        if redirect_uri in existing_redirect_uris:
+            print(f'"{redirect_uri}" already exists in client "{input_params["target_client_id"]}"')
         else:
-            existing_redirect_uris.remove(input_params['redirect_uri'])
+            existing_redirect_uris.append(redirect_uri)
             client['redirectUris'] = existing_redirect_uris
             keycloak_admin.update_client(client_id=hashed_client_id, payload=client)
-            print(f'remove redirect-uri "{input_params["redirect_uri"]}" in client "{hashed_client_id}" success')
+            print(f'append "{redirect_uri}" in client "{input_params["target_client_id"]}" success')
     except Exception as inner_e:
         print(inner_e)
-        raise Exception(f'remove redirect-uri in client {hashed_client_id} on keycloak failed')
+        raise Exception('update client on keycloak failed')
 
     keycloak_openid.logout(keycloak_admin.connection.token['refresh_token'])
+
 except Exception as e:
     print(e)
-    print(f'remove redirect uri "{input_params["redirect_uri"]}" to client "{input_params["target_client_id"]}" failed')
+    print(f'append redirect uri "{input_params["redirect_uri"]}" to client "{input_params["target_client_id"]}" failed')
     keycloak_openid.logout(keycloak_admin.connection.token['refresh_token'])
     sys.exit(1)

@@ -11,6 +11,7 @@ input_params = {
     'keycloak_credential_secret_namespace': 'keycloak',
 
     'client_role_name': 'admin',
+    'user_name': 'user1',
 }
 
 
@@ -33,7 +34,7 @@ def get_secret(k8s_client, secret_name, secret_namespace):
     return decoded_data
 
 
-k8s_client = get_kubernetes_api(local=True)
+k8s_client = get_kubernetes_api(local=False)
 
 try:
     secret_name = input_params['keycloak_credential_secret_name']
@@ -67,6 +68,7 @@ except Exception as e:
     print(f'login to {input_params["server_url"]} failed')
     sys.exit(1)
 
+
 try:
     try:
         hashed_client_id = keycloak_admin.get_client_id(client_id=input_params["target_client_id"])
@@ -76,22 +78,31 @@ try:
         raise Exception(f'get client id "{input_params["target_client_id"]} failed')
 
     try:
-        role_name = input_params['client_role_name']
-        keycloak_admin.create_client_role(
-            client_role_id=hashed_client_id,
-            payload={
-                'name': role_name,
-                'clientRole': True,
-            }
-        )
-        print(f'create client role {role_name} in client "{input_params["target_client_id"]}" success')
+        idOfClientRole = keycloak_admin.get_client_role_id(client_id=hashed_client_id,
+                                                           role_name=input_params["client_role_name"])
+        print(f'client role id in client id "{input_params["target_client_id"]}" is "{idOfClientRole}"')
     except Exception as inner_e:
         print(inner_e)
-        raise Exception('create client role on keycloak failed')
+        raise Exception(f'get client role "{input_params["client_role_name"]}" failed')
+
+    try:
+        idOfUser = keycloak_admin.get_user_id(username=input_params["user_name"])
+        print(f'id of user "{input_params["user_name"]}" is "{idOfUser}"')
+    except Exception as inner_e:
+        print(inner_e)
+        raise Exception(f'get user "{input_params["user_name"]}" failed')
+
+    try:
+        keycloak_admin.assign_client_role(client_id=hashed_client_id, user_id=idOfUser,
+                                          roles=[{'id': idOfClientRole, 'name': input_params["client_role_name"]}])
+        print(f'assign client role "{input_params["client_role_name"]}" to user "{input_params["user_name"]}" success')
+    except Exception as inner_e:
+        print(inner_e)
+        raise Exception(f'assign client role to user on keycloak failed')
 
     keycloak_openid.logout(keycloak_admin.connection.token['refresh_token'])
 except Exception as e:
     print(e)
-    print(f'create client role {role_name} in client "{input_params["target_client_id"]}" failed')
+    print(f'assign client role "{input_params["client_role_name"]}" to user "{input_params["user_name"]}" failed')
     keycloak_openid.logout(keycloak_admin.connection.token['refresh_token'])
     sys.exit(1)

@@ -3,6 +3,7 @@ import requests
 from kubernetes import client, config
 import sys
 import base64
+import json
 
 input_params = {
     'server_url': 'http://donggyu-keycloak.taco-cat.xyz/auth/',
@@ -11,11 +12,8 @@ input_params = {
     'keycloak_credential_secret_name': 'keycloak',
     'keycloak_credential_secret_namespace': 'keycloak',
 
-    'mapper_name': 'k8s-role-mapper',
-    'claim_name': 'groups',
-    'add_to_access_token': False,
-    'add_to_id_token': True,
-    'add_to_userinfo': False,
+    'client_role_name': 'admin',
+    'user_name': 'user1',
 }
 
 
@@ -38,39 +36,7 @@ def get_secret(k8s_client, secret_name, secret_namespace):
     return decoded_data
 
 
-def create_client_scope_mapper(url, realm_name, client_id, hashed_client_id, token, mapper_name):
-    # if url end with '/', remove it
-    if url[-1] == '/':
-        url = url[:-1]
-    path = f'/admin/realms/{realm_name}/clients/{hashed_client_id}/protocol-mappers/models'
-    headers = {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + token['access_token'],
-    }
-    data = {
-        'name': mapper_name,
-        'protocol': 'openid-connect',
-        'protocolMapper': 'oidc-usermodel-client-role-mapper',
-        'config': {
-            'usermodel.clientRoleMapping.clientId': client_id,
-            'claim.name': input_params['claim_name'],
-            'access.token.claim': input_params['add_to_access_token'],
-            'id.token.claim': input_params['add_to_id_token'],
-            'userinfo.token.claim': input_params['add_to_userinfo'],
-            'multivalued': 'true',
-            'jsonType.label': 'String',
-        },
-    }
-    response = requests.post(url + path, headers=headers, json=data)
-    if response.status_code == 201:
-        print(f'create client scope mapper {client_id} success')
-    elif response.status_code == 409:
-        raise Exception(response.text)
-    else:
-        raise Exception(response.text)
-
-
-k8s_client = get_kubernetes_api(local=True)
+k8s_client = get_kubernetes_api(local=False)
 
 try:
     secret_name = input_params['keycloak_credential_secret_name']
@@ -104,6 +70,7 @@ except Exception as e:
     print(f'login to {input_params["server_url"]} failed')
     sys.exit(1)
 
+
 try:
     try:
         hashed_client_id = keycloak_admin.get_client_id(client_id=input_params["target_client_id"])
@@ -113,22 +80,31 @@ try:
         raise Exception(f'get client id "{input_params["target_client_id"]} failed')
 
     try:
-        create_client_scope_mapper(
-            url=input_params['server_url'],
-            realm_name=input_params['target_realm_name'],
-            client_id=input_params['target_client_id'],
-            hashed_client_id=hashed_client_id,
-            token=keycloak_admin.connection.token,
-            mapper_name=input_params['mapper_name'],
-        )
-        print(f'create client scope mapper "{input_params["mapper_name"]}" in client "{input_params["target_client_id"]} success')
+        idOfClientRole = keycloak_admin.get_client_role_id(client_id=hashed_client_id,
+                                                           role_name=input_params["client_role_name"])
+        print(f'client role id in client id "{input_params["target_client_id"]}" is "{idOfClientRole}"')
     except Exception as inner_e:
         print(inner_e)
-        raise Exception('create client role on keycloak failed')
+        raise Exception(f'get client role "{input_params["client_role_name"]}" failed')
+
+    try:
+        idOfUser = keycloak_admin.get_user_id(username=input_params["user_name"])
+        print(f'id of user "{input_params["user_name"]}" is "{idOfUser}"')
+    except Exception as inner_e:
+        print(inner_e)
+        raise Exception(f'get user "{input_params["user_name"]}" failed')
+
+    try:
+        keycloak_admin.delete_client_roles_of_user(client_id=hashed_client_id, user_id=idOfUser,
+                                                   roles=[{'id': idOfClientRole, 'name': input_params["client_role_name"]}])
+        print(f'un-assign client role "{input_params["client_role_name"]}" to user "{input_params["user_name"]}" success')
+    except Exception as inner_e:
+        print(inner_e)
+        raise Exception('un-assign client role to user on keycloak failed')
 
     keycloak_openid.logout(keycloak_admin.connection.token['refresh_token'])
 except Exception as e:
     print(e)
-    print(f'create client scope mapper "{input_params["mapper_name"]}" in client "{input_params["target_client_id"]} failed')
+    print(f'un-assign client role "{input_params["client_role_name"]}" to user "{input_params["user_name"]}" failed')
     keycloak_openid.logout(keycloak_admin.connection.token['refresh_token'])
     sys.exit(1)
