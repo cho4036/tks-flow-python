@@ -9,7 +9,7 @@ spec:
     inputs:
       parameters:
       - name: server_url
-        value: http://donggyu-keycloak.taco-cat.xyz/auth/
+        value: http://tks-console-dev.taco-cat.xyz/auth/
       - name: target_realm_name
         value: test3
       - name: target_client_id
@@ -34,12 +34,12 @@ spec:
         import sys
         import base64
         import json
-        input_params = {'server_url': '{{workflow.parameters.server_url}}', 'target_realm_name': '{{workflow.parameters.target_realm_name}}', 'target_client_id': '{{workflow.parameters.target_client_id}}', 'keycloak_credential_secret_name': '{{workflow.parameters.keycloak_credential_secret_name}}', 'keycloak_credential_secret_namespace': '{{workflow.parameters.keycloak_credential_secret_namespace}}', 'client_role_name': '{{workflow.parameters.client_role_name}}', 'user_name': '{{workflow.parameters.user_name}}'}
+        input_params = {'server_url': '{{inputs.parameters.server_url}}', 'target_realm_name': '{{inputs.parameters.target_realm_name}}', 'target_client_id': '{{inputs.parameters.target_client_id}}', 'keycloak_credential_secret_name': '{{inputs.parameters.keycloak_credential_secret_name}}', 'keycloak_credential_secret_namespace': '{{inputs.parameters.keycloak_credential_secret_namespace}}', 'client_role_name': '{{inputs.parameters.client_role_name}}', 'user_name': '{{inputs.parameters.user_name}}'}
 
         def get_kubernetes_api(local=False):
             if local:
                 import os
-                kubeconfig_path = os.path.expandvars('$HOME/donggyu_kubeconfig/kubeconfig_donggyu-test')
+                kubeconfig_path = os.path.expandvars('$HOME/.kube/config')
                 config.load_kube_config(config_file=kubeconfig_path)
             else:
                 config.load_incluster_config()
@@ -72,19 +72,19 @@ spec:
         try:
             try:
                 hashed_client_id = keycloak_admin.get_client_id(client_id=input_params['target_client_id'])
-                print(f"""hashed_client_id of client id "{input_params['target_client_id']}" is "{hashed_client_id}"""")
+                print(f"""hashed_client_id of client id "{input_params['target_client_id']}" is "{hashed_client_id}".""")
             except Exception as inner_e:
                 print(inner_e)
                 raise Exception(f"""get client id "{input_params['target_client_id']} failed""")
             try:
                 idOfClientRole = keycloak_admin.get_client_role_id(client_id=hashed_client_id, role_name=input_params['client_role_name'])
-                print(f"""client role id in client id "{input_params['target_client_id']}" is "{idOfClientRole}"""")
+                print(f"""client role id in client id "{input_params['target_client_id']}" is "{idOfClientRole}".""")
             except Exception as inner_e:
                 print(inner_e)
                 raise Exception(f"""get client role "{input_params['client_role_name']}" failed""")
             try:
                 idOfUser = keycloak_admin.get_user_id(username=input_params['user_name'])
-                print(f"""id of user "{input_params['user_name']}" is "{idOfUser}"""")
+                print(f"""id of user "{input_params['user_name']}" is "{idOfUser}".""")
             except Exception as inner_e:
                 print(inner_e)
                 raise Exception(f"""get user "{input_params['user_name']}" failed""")
@@ -104,7 +104,7 @@ spec:
     inputs:
       parameters:
       - name: server_url
-        value: http://donggyu-keycloak.taco-cat.xyz/auth/
+        value: http://tks-console-dev.taco-cat.xyz/auth/
       - name: target_realm_name
         value: test3
       - name: keycloak_credential_secret_name
@@ -131,12 +131,12 @@ spec:
         from kubernetes import client, config
         import sys
         import base64
-        input_params = {'server_url': '{{workflow.parameters.server_url}}', 'target_realm_name': '{{workflow.parameters.target_realm_name}}', 'keycloak_credential_secret_name': '{{workflow.parameters.keycloak_credential_secret_name}}', 'keycloak_credential_secret_namespace': '{{workflow.parameters.keycloak_credential_secret_namespace}}', 'user_name': '{{workflow.parameters.user_name}}', 'user_password': '{{workflow.parameters.user_password}}', 'user_email': '{{workflow.parameters.user_email}}', 'user_first_name': '{{workflow.parameters.user_first_name}}', 'user_last_name': '{{workflow.parameters.user_last_name}}'}
+        input_params = {'server_url': '{{inputs.parameters.server_url}}', 'target_realm_name': '{{inputs.parameters.target_realm_name}}', 'keycloak_credential_secret_name': '{{inputs.parameters.keycloak_credential_secret_name}}', 'keycloak_credential_secret_namespace': '{{inputs.parameters.keycloak_credential_secret_namespace}}', 'user_name': '{{inputs.parameters.user_name}}', 'user_password': '{{inputs.parameters.user_password}}', 'user_email': '{{inputs.parameters.user_email}}', 'user_first_name': '{{inputs.parameters.user_first_name}}', 'user_last_name': '{{inputs.parameters.user_last_name}}'}
 
         def get_kubernetes_api(local=False):
             if local:
                 import os
-                kubeconfig_path = os.path.expandvars('$HOME/donggyu_kubeconfig/kubeconfig_donggyu-test')
+                kubeconfig_path = os.path.expandvars('$HOME/.kube/config')
                 config.load_kube_config(config_file=kubeconfig_path)
             else:
                 config.load_incluster_config()
@@ -184,7 +184,7 @@ spec:
     inputs:
       parameters:
       - name: server_url
-        value: http://donggyu-keycloak.taco-cat.xyz/auth/
+        value: http://tks-console-dev.taco-cat.xyz/auth/
       - name: target_realm_name
         value: test3
       - name: target_client_id
@@ -207,12 +207,12 @@ spec:
         from kubernetes import client, config
         import sys
         import base64
-        input_params = {'server_url': '{{workflow.parameters.server_url}}', 'target_realm_name': '{{workflow.parameters.target_realm_name}}', 'target_client_id': '{{workflow.parameters.target_client_id}}', 'keycloak_credential_secret_name': '{{workflow.parameters.keycloak_credential_secret_name}}', 'keycloak_credential_secret_namespace': '{{workflow.parameters.keycloak_credential_secret_namespace}}', 'client_role_name': '{{workflow.parameters.client_role_name}}', 'user_name': '{{workflow.parameters.user_name}}'}
+        input_params = {'server_url': '{{inputs.parameters.server_url}}', 'target_realm_name': '{{inputs.parameters.target_realm_name}}', 'target_client_id': '{{inputs.parameters.target_client_id}}', 'keycloak_credential_secret_name': '{{inputs.parameters.keycloak_credential_secret_name}}', 'keycloak_credential_secret_namespace': '{{inputs.parameters.keycloak_credential_secret_namespace}}', 'client_role_name': '{{inputs.parameters.client_role_name}}', 'user_name': '{{inputs.parameters.user_name}}'}
 
         def get_kubernetes_api(local=False):
             if local:
                 import os
-                kubeconfig_path = os.path.expandvars('$HOME/donggyu_kubeconfig/kubeconfig_donggyu-test')
+                kubeconfig_path = os.path.expandvars('$HOME/.kube/config')
                 config.load_kube_config(config_file=kubeconfig_path)
             else:
                 config.load_incluster_config()
@@ -245,19 +245,19 @@ spec:
         try:
             try:
                 hashed_client_id = keycloak_admin.get_client_id(client_id=input_params['target_client_id'])
-                print(f"""hashed_client_id of client id "{input_params['target_client_id']}" is "{hashed_client_id}"""")
+                print(f"""hashed_client_id of client id "{input_params['target_client_id']}" is "{hashed_client_id}".""")
             except Exception as inner_e:
                 print(inner_e)
                 raise Exception(f"""get client id "{input_params['target_client_id']} failed""")
             try:
                 idOfClientRole = keycloak_admin.get_client_role_id(client_id=hashed_client_id, role_name=input_params['client_role_name'])
-                print(f"""client role id in client id "{input_params['target_client_id']}" is "{idOfClientRole}"""")
+                print(f"""client role id in client id "{input_params['target_client_id']}" is "{idOfClientRole}".""")
             except Exception as inner_e:
                 print(inner_e)
                 raise Exception(f"""get client role "{input_params['client_role_name']}" failed""")
             try:
                 idOfUser = keycloak_admin.get_user_id(username=input_params['user_name'])
-                print(f"""id of user "{input_params['user_name']}" is "{idOfUser}"""")
+                print(f"""id of user "{input_params['user_name']}" is "{idOfUser}".""")
             except Exception as inner_e:
                 print(inner_e)
                 raise Exception(f"""get user "{input_params['user_name']}" failed""")
@@ -277,7 +277,7 @@ spec:
     inputs:
       parameters:
       - name: server_url
-        value: http://donggyu-keycloak.taco-cat.xyz/auth/
+        value: http://tks-console-dev.taco-cat.xyz/auth/
       - name: target_realm_name
         value: test3
       - name: keycloak_credential_secret_name
@@ -296,12 +296,12 @@ spec:
         from kubernetes import client, config
         import sys
         import base64
-        input_params = {'server_url': '{{workflow.parameters.server_url}}', 'target_realm_name': '{{workflow.parameters.target_realm_name}}', 'keycloak_credential_secret_name': '{{workflow.parameters.keycloak_credential_secret_name}}', 'keycloak_credential_secret_namespace': '{{workflow.parameters.keycloak_credential_secret_namespace}}', 'user_name': '{{workflow.parameters.user_name}}'}
+        input_params = {'server_url': '{{inputs.parameters.server_url}}', 'target_realm_name': '{{inputs.parameters.target_realm_name}}', 'keycloak_credential_secret_name': '{{inputs.parameters.keycloak_credential_secret_name}}', 'keycloak_credential_secret_namespace': '{{inputs.parameters.keycloak_credential_secret_namespace}}', 'user_name': '{{inputs.parameters.user_name}}'}
 
         def get_kubernetes_api(local=False):
             if local:
                 import os
-                kubeconfig_path = os.path.expandvars('$HOME/donggyu_kubeconfig/kubeconfig_donggyu-test')
+                kubeconfig_path = os.path.expandvars('$HOME/.kube/config')
                 config.load_kube_config(config_file=kubeconfig_path)
             else:
                 config.load_incluster_config()

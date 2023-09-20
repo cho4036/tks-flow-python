@@ -9,7 +9,7 @@ spec:
     inputs:
       parameters:
       - name: server_url
-        value: http://donggyu-keycloak.taco-cat.xyz/auth/
+        value: http://tks-console-dev.taco-cat.xyz/auth/
       - name: target_realm_name
         value: test4
       - name: keycloak_credential_secret_name
@@ -26,12 +26,12 @@ spec:
         from kubernetes import client, config
         import sys
         import base64
-        input_params = {'server_url': '{{workflow.parameters.server_url}}', 'target_realm_name': '{{workflow.parameters.target_realm_name}}', 'keycloak_credential_secret_name': '{{workflow.parameters.keycloak_credential_secret_name}}', 'keycloak_credential_secret_namespace': '{{workflow.parameters.keycloak_credential_secret_namespace}}'}
+        input_params = {'server_url': '{{inputs.parameters.server_url}}', 'target_realm_name': '{{inputs.parameters.target_realm_name}}', 'keycloak_credential_secret_name': '{{inputs.parameters.keycloak_credential_secret_name}}', 'keycloak_credential_secret_namespace': '{{inputs.parameters.keycloak_credential_secret_namespace}}'}
 
         def get_kubernetes_api(local=False):
             if local:
                 import os
-                kubeconfig_path = os.path.expandvars('$HOME/donggyu_kubeconfig/kubeconfig_donggyu-test')
+                kubeconfig_path = os.path.expandvars('$HOME/.kube/config')
                 config.load_kube_config(config_file=kubeconfig_path)
             else:
                 config.load_incluster_config()
@@ -74,7 +74,7 @@ spec:
     inputs:
       parameters:
       - name: server_url
-        value: http://donggyu-keycloak.taco-cat.xyz/auth/
+        value: http://tks-console-dev.taco-cat.xyz/auth/
       - name: target_realm_name
         value: test4
       - name: keycloak_credential_secret_name
@@ -91,12 +91,12 @@ spec:
         from kubernetes import client, config
         import sys
         import base64
-        input_params = {'server_url': '{{workflow.parameters.server_url}}', 'target_realm_name': '{{workflow.parameters.target_realm_name}}', 'keycloak_credential_secret_name': '{{workflow.parameters.keycloak_credential_secret_name}}', 'keycloak_credential_secret_namespace': '{{workflow.parameters.keycloak_credential_secret_namespace}}'}
+        input_params = {'server_url': '{{inputs.parameters.server_url}}', 'target_realm_name': '{{inputs.parameters.target_realm_name}}', 'keycloak_credential_secret_name': '{{inputs.parameters.keycloak_credential_secret_name}}', 'keycloak_credential_secret_namespace': '{{inputs.parameters.keycloak_credential_secret_namespace}}'}
 
         def get_kubernetes_api(local=False):
             if local:
                 import os
-                kubeconfig_path = os.path.expandvars('$HOME/donggyu_kubeconfig/kubeconfig_donggyu-test')
+                kubeconfig_path = os.path.expandvars('$HOME/.kube/config')
                 config.load_kube_config(config_file=kubeconfig_path)
             else:
                 config.load_incluster_config()

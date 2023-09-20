@@ -4,9 +4,9 @@ import sys
 import base64
 
 input_params = {
-    'server_url': 'http://donggyu-keycloak.taco-cat.xyz/auth/',
+    'server_url': 'https://tks-console-dev.taco-cat.xyz/auth/',
     'target_realm_name': 'test3',
-    'target_client_id': 'k8s-oidc6',
+    'target_client_id': 'test-client2',
     'keycloak_credential_secret_name': 'keycloak',
     'keycloak_credential_secret_namespace': 'keycloak',
 
@@ -17,7 +17,7 @@ input_params = {
 def get_kubernetes_api(local=False):
     if local:
         import os
-        kubeconfig_path = os.path.expandvars("$HOME/donggyu_kubeconfig/kubeconfig_donggyu-test")
+        kubeconfig_path = os.path.expandvars("$HOME/dev_kubeconfig/kubeconfig")
         # use kubeconfig in a directory& return kubernetes client
         config.load_kube_config(config_file=kubeconfig_path)
     else:
@@ -70,7 +70,7 @@ except Exception as e:
 try:
     try:
         hashed_client_id = keycloak_admin.get_client_id(client_id=input_params["target_client_id"])
-        print(f'hashed_client_id of client id "{input_params["target_client_id"]}" is "{hashed_client_id}"')
+        print(f'hashed_client_id of client id "{input_params["target_client_id"]}" is "{hashed_client_id}".')
     except Exception as inner_e:
         print(inner_e)
         raise Exception(f'get client id "{input_params["target_client_id"]} failed')
@@ -84,7 +84,7 @@ try:
                 'clientRole': True,
             }
         )
-        print(f'create client role {role_name} in client "{input_params["target_client_id"]}" success')
+        print(f'create client role "{role_name}" in client "{input_params["target_client_id"]}" success')
     except Exception as inner_e:
         print(inner_e)
         raise Exception('create client role on keycloak failed')

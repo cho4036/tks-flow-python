@@ -4,7 +4,7 @@ import sys
 import base64
 
 input_params = {
-    'server_url': 'http://donggyu-keycloak.taco-cat.xyz/auth/',
+    'server_url': 'http://tks-console-dev.taco-cat.xyz/auth/',
     'target_realm_name': 'test3',
     'target_client_id': 'k8s-oidc7',
     'keycloak_credential_secret_name': 'keycloak',
@@ -17,7 +17,7 @@ input_params = {
 def get_kubernetes_api(local=False):
     if local:
         import os
-        kubeconfig_path = os.path.expandvars("$HOME/donggyu_kubeconfig/kubeconfig_donggyu-test")
+        kubeconfig_path = os.path.expandvars("$HOME/.kube/config")
         # use kubeconfig in a directory& return kubernetes client
         config.load_kube_config(config_file=kubeconfig_path)
     else:
@@ -71,7 +71,7 @@ except Exception as e:
 try:
     try:
         hashed_client_id = keycloak_admin.get_client_id(input_params['target_client_id'])
-        print(f'hashed_client_id of client id "{input_params["target_client_id"]}" is "{hashed_client_id}"')
+        print(f'hashed_client_id of client id "{input_params["target_client_id"]}" is "{hashed_client_id}".')
         client = keycloak_admin.get_client(client_id=hashed_client_id)
         existing_redirect_uris = client['redirectUris']
     except Exception as inner_e:
@@ -81,7 +81,7 @@ try:
     try:
         redirect_uri = input_params['redirect_uri']
         if redirect_uri in existing_redirect_uris:
-            print(f'"{redirect_uri}" already exists in client "{input_params["target_client_id"]}"')
+            print(f'"{redirect_uri}" already exists in client "{input_params["target_client_id"]}".')
         else:
             existing_redirect_uris.append(redirect_uri)
             client['redirectUris'] = existing_redirect_uris

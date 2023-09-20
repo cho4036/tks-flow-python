@@ -4,7 +4,7 @@ import sys
 import base64
 
 input_params = {
-    'server_url': 'http://donggyu-keycloak.taco-cat.xyz/auth/',
+    'server_url': 'http://tks-console-dev.taco-cat.xyz/auth/',
     'target_realm_name': 'test3',
     'keycloak_credential_secret_name': 'keycloak',
     'keycloak_credential_secret_namespace': 'keycloak',
@@ -20,7 +20,7 @@ input_params = {
 def get_kubernetes_api(local=False):
     if local:
         import os
-        kubeconfig_path = os.path.expandvars("$HOME/donggyu_kubeconfig/kubeconfig_donggyu-test")
+        kubeconfig_path = os.path.expandvars("$HOME/.kube/config")
         # use kubeconfig in a directory& return kubernetes client
         config.load_kube_config(config_file=kubeconfig_path)
     else:

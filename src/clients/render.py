@@ -22,7 +22,7 @@ class ReplaceInputParams(ast.NodeTransformer):
                 for i, key in enumerate(node.value.keys):
                     if isinstance(key, ast.Str):
                         param_name = key.s
-                        node.value.values[i] = ast.Str(f'{{{{workflow.parameters.{param_name}}}}}')
+                        node.value.values[i] = ast.Str(f'{{{{inputs.parameters.{param_name}}}}}')
         return node
 
 
@@ -52,7 +52,7 @@ def extract_input_params(script_path):
                         if isinstance(node.value, ast.Dict):
                             keys = [k.s for k in node.value.keys]
                             values = [v.s for v in node.value.values]
-                            # values = [f"{{{{workflow.parameters.{k.s}}}}}" for k in node.value.keys]
+                            # values = [f"{{{{inputs.parameters.{k.s}}}}}" for k in node.value.keys]
                             return dict(zip(keys, values))
         return {}
 
@@ -76,7 +76,7 @@ for filename in os.listdir(current_script_path):
         with open(script_path, 'r') as f:
             script_content = f.read()
 
-        # 파이썬 스크립트 내용에서 input_params를 workflow.parameters로 치환
+        # 파이썬 스크립트 내용에서 input_params를 inputs.parameters로 치환
         script_content = replace_input_params_with_ast(script_content)
 
         # Argo Workflow용 inputs.parameters 생성

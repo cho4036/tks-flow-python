@@ -1,4 +1,4 @@
-from keycloak import KeycloakOpenID, KeycloakAdmin, KeycloakOpenIDConnection
+from keycloak import KeycloakOpenIDConnection, KeycloakAdmin, KeycloakOpenID
 from kubernetes import client, config
 import sys
 import base64
@@ -6,11 +6,11 @@ import base64
 input_params = {
     'server_url': 'http://tks-console-dev.taco-cat.xyz/auth/',
     'target_realm_name': 'test3',
-    'target_client_id': 'k8s-oidc7',
+    'target_client_id': 'k8s-oidc6',
     'keycloak_credential_secret_name': 'keycloak',
     'keycloak_credential_secret_namespace': 'keycloak',
 
-    'redirect_uri': 'aaaa',
+    'client_role_name': 'admin',
 }
 
 
@@ -59,7 +59,6 @@ keycloak_openid = KeycloakOpenID(
     client_id='admin-cli',
     realm_name='master',
 )
-
 try:
     keycloak_admin = KeycloakAdmin(connection=keycloak_connection)
     print(f'login to {input_params["server_url"]} success')
@@ -68,32 +67,28 @@ except Exception as e:
     print(f'login to {input_params["server_url"]} failed')
     sys.exit(1)
 
-
 try:
     try:
-        hashed_client_id = keycloak_admin.get_client_id(input_params['target_client_id'])
+        hashed_client_id = keycloak_admin.get_client_id(client_id=input_params["target_client_id"])
         print(f'hashed_client_id of client id "{input_params["target_client_id"]}" is "{hashed_client_id}".')
-        client = keycloak_admin.get_client(client_id=hashed_client_id)
-        existing_redirect_uris = client['redirectUris']
     except Exception as inner_e:
         print(inner_e)
         raise Exception(f'get client id "{input_params["target_client_id"]} failed')
 
     try:
-        if input_params['redirect_uri'] not in existing_redirect_uris:
-            print(f'redirect-uri "{input_params["redirect_uri"]}" not exist in client "{hashed_client_id}".')
-        else:
-            existing_redirect_uris.remove(input_params['redirect_uri'])
-            client['redirectUris'] = existing_redirect_uris
-            keycloak_admin.update_client(client_id=hashed_client_id, payload=client)
-            print(f'remove redirect-uri "{input_params["redirect_uri"]}" in client "{hashed_client_id}" success')
+        role_name = input_params['client_role_name']
+        keycloak_admin.delete_client_role(
+            client_role_id=hashed_client_id,
+            role_name=role_name,
+        )
+        print(f'create client role {role_name} in client "{input_params["target_client_id"]}" success')
     except Exception as inner_e:
         print(inner_e)
-        raise Exception(f'remove redirect-uri in client {hashed_client_id} on keycloak failed')
+        raise Exception('create client role on keycloak failed')
 
     keycloak_openid.logout(keycloak_admin.connection.token['refresh_token'])
 except Exception as e:
     print(e)
-    print(f'remove redirect uri "{input_params["redirect_uri"]}" to client "{input_params["target_client_id"]}" failed')
+    print(f'create client role {role_name} in client "{input_params["target_client_id"]}" failed')
     keycloak_openid.logout(keycloak_admin.connection.token['refresh_token'])
     sys.exit(1)

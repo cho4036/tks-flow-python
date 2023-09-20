@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
-  name: keycloak-clients
+  name: keycloak-client
   namespace: argo
 spec:
   templates:
@@ -9,7 +9,7 @@ spec:
     inputs:
       parameters:
       - name: server_url
-        value: http://donggyu-keycloak.taco-cat.xyz/auth/
+        value: http://tks-console-dev.taco-cat.xyz/auth/
       - name: target_realm_name
         value: test3
       - name: target_client_id
@@ -29,12 +29,12 @@ spec:
         from kubernetes import client, config
         import sys
         import base64
-        input_params = {'server_url': '{{workflow.parameters.server_url}}', 'target_realm_name': '{{workflow.parameters.target_realm_name}}', 'target_client_id': '{{workflow.parameters.target_client_id}}', 'keycloak_credential_secret_name': '{{workflow.parameters.keycloak_credential_secret_name}}', 'keycloak_credential_secret_namespace': '{{workflow.parameters.keycloak_credential_secret_namespace}}'}
+        input_params = {'server_url': '{{inputs.parameters.server_url}}', 'target_realm_name': '{{inputs.parameters.target_realm_name}}', 'target_client_id': '{{inputs.parameters.target_client_id}}', 'keycloak_credential_secret_name': '{{inputs.parameters.keycloak_credential_secret_name}}', 'keycloak_credential_secret_namespace': '{{inputs.parameters.keycloak_credential_secret_namespace}}'}
 
         def get_kubernetes_api(local=False):
             if local:
                 import os
-                kubeconfig_path = os.path.expandvars('$HOME/donggyu_kubeconfig/kubeconfig_donggyu-test')
+                kubeconfig_path = os.path.expandvars('$HOME/.kube/config')
                 config.load_kube_config(config_file=kubeconfig_path)
             else:
                 config.load_incluster_config()
@@ -80,7 +80,7 @@ spec:
         try:
             try:
                 hashed_client_id = keycloak_admin.get_client_id(client_id=input_params['target_client_id'])
-                print(f"""hashed_client_id of client id "{input_params['target_client_id']}" is "{hashed_client_id}"""")
+                print(f"""hashed_client_id of client id "{input_params['target_client_id']}" is "{hashed_client_id}".""")
             except Exception as inner_e:
                 print(inner_e)
                 raise Exception('get client failed')
@@ -99,11 +99,11 @@ spec:
     inputs:
       parameters:
       - name: server_url
-        value: http://donggyu-keycloak.taco-cat.xyz/auth/
+        value: https://tks-console-dev.taco-cat.xyz/auth/
       - name: target_realm_name
         value: test3
       - name: target_client_id
-        value: k8s-oidc6
+        value: test-client2
       - name: keycloak_credential_secret_name
         value: keycloak
       - name: keycloak_credential_secret_namespace
@@ -120,12 +120,12 @@ spec:
         from kubernetes import client, config
         import sys
         import base64
-        input_params = {'server_url': '{{workflow.parameters.server_url}}', 'target_realm_name': '{{workflow.parameters.target_realm_name}}', 'target_client_id': '{{workflow.parameters.target_client_id}}', 'keycloak_credential_secret_name': '{{workflow.parameters.keycloak_credential_secret_name}}', 'keycloak_credential_secret_namespace': '{{workflow.parameters.keycloak_credential_secret_namespace}}', 'client_role_name': '{{workflow.parameters.client_role_name}}'}
+        input_params = {'server_url': '{{inputs.parameters.server_url}}', 'target_realm_name': '{{inputs.parameters.target_realm_name}}', 'target_client_id': '{{inputs.parameters.target_client_id}}', 'keycloak_credential_secret_name': '{{inputs.parameters.keycloak_credential_secret_name}}', 'keycloak_credential_secret_namespace': '{{inputs.parameters.keycloak_credential_secret_namespace}}', 'client_role_name': '{{inputs.parameters.client_role_name}}'}
 
         def get_kubernetes_api(local=False):
             if local:
                 import os
-                kubeconfig_path = os.path.expandvars('$HOME/donggyu_kubeconfig/kubeconfig_donggyu-test')
+                kubeconfig_path = os.path.expandvars('$HOME/dev_kubeconfig/kubeconfig')
                 config.load_kube_config(config_file=kubeconfig_path)
             else:
                 config.load_incluster_config()
@@ -158,14 +158,14 @@ spec:
         try:
             try:
                 hashed_client_id = keycloak_admin.get_client_id(client_id=input_params['target_client_id'])
-                print(f"""hashed_client_id of client id "{input_params['target_client_id']}" is "{hashed_client_id}"""")
+                print(f"""hashed_client_id of client id "{input_params['target_client_id']}" is "{hashed_client_id}".""")
             except Exception as inner_e:
                 print(inner_e)
                 raise Exception(f"""get client id "{input_params['target_client_id']} failed""")
             try:
                 role_name = input_params['client_role_name']
                 keycloak_admin.create_client_role(client_role_id=hashed_client_id, payload={'name': role_name, 'clientRole': True})
-                print(f"""create client role {role_name} in client "{input_params['target_client_id']}" success""")
+                print(f"""create client role "{role_name}" in client "{input_params['target_client_id']}" success""")
             except Exception as inner_e:
                 print(inner_e)
                 raise Exception('create client role on keycloak failed')
@@ -179,7 +179,7 @@ spec:
     inputs:
       parameters:
       - name: server_url
-        value: http://donggyu-keycloak.taco-cat.xyz/auth/
+        value: http://tks-console-dev.taco-cat.xyz/auth/
       - name: target_realm_name
         value: test3
       - name: target_client_id
@@ -200,12 +200,12 @@ spec:
         from kubernetes import client, config
         import sys
         import base64
-        input_params = {'server_url': '{{workflow.parameters.server_url}}', 'target_realm_name': '{{workflow.parameters.target_realm_name}}', 'target_client_id': '{{workflow.parameters.target_client_id}}', 'keycloak_credential_secret_name': '{{workflow.parameters.keycloak_credential_secret_name}}', 'keycloak_credential_secret_namespace': '{{workflow.parameters.keycloak_credential_secret_namespace}}', 'redirect_uri': '{{workflow.parameters.redirect_uri}}'}
+        input_params = {'server_url': '{{inputs.parameters.server_url}}', 'target_realm_name': '{{inputs.parameters.target_realm_name}}', 'target_client_id': '{{inputs.parameters.target_client_id}}', 'keycloak_credential_secret_name': '{{inputs.parameters.keycloak_credential_secret_name}}', 'keycloak_credential_secret_namespace': '{{inputs.parameters.keycloak_credential_secret_namespace}}', 'redirect_uri': '{{inputs.parameters.redirect_uri}}'}
 
         def get_kubernetes_api(local=False):
             if local:
                 import os
-                kubeconfig_path = os.path.expandvars('$HOME/donggyu_kubeconfig/kubeconfig_donggyu-test')
+                kubeconfig_path = os.path.expandvars('$HOME/.kube/config')
                 config.load_kube_config(config_file=kubeconfig_path)
             else:
                 config.load_incluster_config()
@@ -238,7 +238,7 @@ spec:
         try:
             try:
                 hashed_client_id = keycloak_admin.get_client_id(input_params['target_client_id'])
-                print(f"""hashed_client_id of client id "{input_params['target_client_id']}" is "{hashed_client_id}"""")
+                print(f"""hashed_client_id of client id "{input_params['target_client_id']}" is "{hashed_client_id}".""")
                 client = keycloak_admin.get_client(client_id=hashed_client_id)
                 existing_redirect_uris = client['redirectUris']
             except Exception as inner_e:
@@ -247,7 +247,7 @@ spec:
             try:
                 redirect_uri = input_params['redirect_uri']
                 if (redirect_uri in existing_redirect_uris):
-                    print(f""""{redirect_uri}" already exists in client "{input_params['target_client_id']}"""")
+                    print(f""""{redirect_uri}" already exists in client "{input_params['target_client_id']}".""")
                 else:
                     existing_redirect_uris.append(redirect_uri)
                     client['redirectUris'] = existing_redirect_uris
@@ -266,7 +266,7 @@ spec:
     inputs:
       parameters:
       - name: server_url
-        value: http://donggyu-keycloak.taco-cat.xyz/auth/
+        value: http://tks-console-dev.taco-cat.xyz/auth/
       - name: target_realm_name
         value: test3
       - name: target_client_id
@@ -287,12 +287,12 @@ spec:
         from kubernetes import client, config
         import sys
         import base64
-        input_params = {'server_url': '{{workflow.parameters.server_url}}', 'target_realm_name': '{{workflow.parameters.target_realm_name}}', 'target_client_id': '{{workflow.parameters.target_client_id}}', 'keycloak_credential_secret_name': '{{workflow.parameters.keycloak_credential_secret_name}}', 'keycloak_credential_secret_namespace': '{{workflow.parameters.keycloak_credential_secret_namespace}}', 'redirect_uri': '{{workflow.parameters.redirect_uri}}'}
+        input_params = {'server_url': '{{inputs.parameters.server_url}}', 'target_realm_name': '{{inputs.parameters.target_realm_name}}', 'target_client_id': '{{inputs.parameters.target_client_id}}', 'keycloak_credential_secret_name': '{{inputs.parameters.keycloak_credential_secret_name}}', 'keycloak_credential_secret_namespace': '{{inputs.parameters.keycloak_credential_secret_namespace}}', 'redirect_uri': '{{inputs.parameters.redirect_uri}}'}
 
         def get_kubernetes_api(local=False):
             if local:
                 import os
-                kubeconfig_path = os.path.expandvars('$HOME/donggyu_kubeconfig/kubeconfig_donggyu-test')
+                kubeconfig_path = os.path.expandvars('$HOME/.kube/config')
                 config.load_kube_config(config_file=kubeconfig_path)
             else:
                 config.load_incluster_config()
@@ -325,7 +325,7 @@ spec:
         try:
             try:
                 hashed_client_id = keycloak_admin.get_client_id(input_params['target_client_id'])
-                print(f"""hashed_client_id of client id "{input_params['target_client_id']}" is "{hashed_client_id}"""")
+                print(f"""hashed_client_id of client id "{input_params['target_client_id']}" is "{hashed_client_id}".""")
                 client = keycloak_admin.get_client(client_id=hashed_client_id)
                 existing_redirect_uris = client['redirectUris']
             except Exception as inner_e:
@@ -333,7 +333,7 @@ spec:
                 raise Exception(f"""get client id "{input_params['target_client_id']} failed""")
             try:
                 if (input_params['redirect_uri'] not in existing_redirect_uris):
-                    print(f"""redirect-uri "{input_params['redirect_uri']}" not exist in client "{hashed_client_id}"""")
+                    print(f"""redirect-uri "{input_params['redirect_uri']}" not exist in client "{hashed_client_id}".""")
                 else:
                     existing_redirect_uris.remove(input_params['redirect_uri'])
                     client['redirectUris'] = existing_redirect_uris
@@ -352,7 +352,7 @@ spec:
     inputs:
       parameters:
       - name: server_url
-        value: http://donggyu-keycloak.taco-cat.xyz/auth/
+        value: http://tks-console-dev.taco-cat.xyz/auth/
       - name: target_realm_name
         value: test3
       - name: target_client_id
@@ -382,12 +382,12 @@ spec:
         from kubernetes import client, config
         import sys
         import base64
-        input_params = {'server_url': '{{workflow.parameters.server_url}}', 'target_realm_name': '{{workflow.parameters.target_realm_name}}', 'target_client_id': '{{workflow.parameters.target_client_id}}', 'keycloak_credential_secret_name': '{{workflow.parameters.keycloak_credential_secret_name}}', 'keycloak_credential_secret_namespace': '{{workflow.parameters.keycloak_credential_secret_namespace}}', 'mapper_name': '{{workflow.parameters.mapper_name}}', 'claim_name': '{{workflow.parameters.claim_name}}', 'add_to_access_token': '{{workflow.parameters.add_to_access_token}}', 'add_to_id_token': '{{workflow.parameters.add_to_id_token}}', 'add_to_userinfo': '{{workflow.parameters.add_to_userinfo}}'}
+        input_params = {'server_url': '{{inputs.parameters.server_url}}', 'target_realm_name': '{{inputs.parameters.target_realm_name}}', 'target_client_id': '{{inputs.parameters.target_client_id}}', 'keycloak_credential_secret_name': '{{inputs.parameters.keycloak_credential_secret_name}}', 'keycloak_credential_secret_namespace': '{{inputs.parameters.keycloak_credential_secret_namespace}}', 'mapper_name': '{{inputs.parameters.mapper_name}}', 'claim_name': '{{inputs.parameters.claim_name}}', 'add_to_access_token': '{{inputs.parameters.add_to_access_token}}', 'add_to_id_token': '{{inputs.parameters.add_to_id_token}}', 'add_to_userinfo': '{{inputs.parameters.add_to_userinfo}}'}
 
         def get_kubernetes_api(local=False):
             if local:
                 import os
-                kubeconfig_path = os.path.expandvars('$HOME/donggyu_kubeconfig/kubeconfig_donggyu-test')
+                kubeconfig_path = os.path.expandvars('$HOME/.kube/config')
                 config.load_kube_config(config_file=kubeconfig_path)
             else:
                 config.load_incluster_config()
@@ -434,7 +434,7 @@ spec:
         try:
             try:
                 hashed_client_id = keycloak_admin.get_client_id(client_id=input_params['target_client_id'])
-                print(f"""hashed_client_id of client id "{input_params['target_client_id']}" is "{hashed_client_id}"""")
+                print(f"""hashed_client_id of client id "{input_params['target_client_id']}" is "{hashed_client_id}".""")
             except Exception as inner_e:
                 print(inner_e)
                 raise Exception(f"""get client id "{input_params['target_client_id']} failed""")
@@ -450,11 +450,91 @@ spec:
             print(f"""create client scope mapper "{input_params['mapper_name']}" in client "{input_params['target_client_id']} failed""")
             keycloak_openid.logout(keycloak_admin.connection.token['refresh_token'])
             sys.exit(1)
+  - name: delete-client-role
+    inputs:
+      parameters:
+      - name: server_url
+        value: http://tks-console-dev.taco-cat.xyz/auth/
+      - name: target_realm_name
+        value: test3
+      - name: target_client_id
+        value: k8s-oidc6
+      - name: keycloak_credential_secret_name
+        value: keycloak
+      - name: keycloak_credential_secret_namespace
+        value: keycloak
+      - name: client_role_name
+        value: admin
+    script:
+      command:
+      - python3
+      image: harbor-cicd.taco-cat.xyz/dev/python-keycloak-cli:v0.1.0
+      source: |2
+
+        from keycloak import KeycloakOpenIDConnection, KeycloakAdmin, KeycloakOpenID
+        from kubernetes import client, config
+        import sys
+        import base64
+        input_params = {'server_url': '{{inputs.parameters.server_url}}', 'target_realm_name': '{{inputs.parameters.target_realm_name}}', 'target_client_id': '{{inputs.parameters.target_client_id}}', 'keycloak_credential_secret_name': '{{inputs.parameters.keycloak_credential_secret_name}}', 'keycloak_credential_secret_namespace': '{{inputs.parameters.keycloak_credential_secret_namespace}}', 'client_role_name': '{{inputs.parameters.client_role_name}}'}
+
+        def get_kubernetes_api(local=False):
+            if local:
+                import os
+                kubeconfig_path = os.path.expandvars('$HOME/.kube/config')
+                config.load_kube_config(config_file=kubeconfig_path)
+            else:
+                config.load_incluster_config()
+            return client.CoreV1Api()
+
+        def get_secret(k8s_client, secret_name, secret_namespace):
+            secret_obj = k8s_client.read_namespaced_secret(name=secret_name, namespace=secret_namespace)
+            encoded_data = secret_obj.data.get('admin-password')
+            decoded_data = base64.b64decode(encoded_data).decode('utf-8')
+            return decoded_data
+        k8s_client = get_kubernetes_api(local=False)
+        try:
+            secret_name = input_params['keycloak_credential_secret_name']
+            secret_namespace = input_params['keycloak_credential_secret_namespace']
+            secret = get_secret(k8s_client, secret_name, secret_namespace)
+            print(f'get secret "{secret_name}" in "{secret_namespace}" namespace')
+        except Exception as e:
+            print(e)
+            print(f'failed to get secret "{secret_name}" in "{secret_namespace}" namespace')
+            sys.exit(1)
+        keycloak_connection = KeycloakOpenIDConnection(server_url=input_params['server_url'], client_id='admin-cli', realm_name=input_params['target_realm_name'], user_realm_name='master', username='admin', password=secret, verify=True)
+        keycloak_openid = KeycloakOpenID(server_url=input_params['server_url'], client_id='admin-cli', realm_name='master')
+        try:
+            keycloak_admin = KeycloakAdmin(connection=keycloak_connection)
+            print(f"login to {input_params['server_url']} success")
+        except Exception as e:
+            print(e)
+            print(f"login to {input_params['server_url']} failed")
+            sys.exit(1)
+        try:
+            try:
+                hashed_client_id = keycloak_admin.get_client_id(client_id=input_params['target_client_id'])
+                print(f"""hashed_client_id of client id "{input_params['target_client_id']}" is "{hashed_client_id}".""")
+            except Exception as inner_e:
+                print(inner_e)
+                raise Exception(f"""get client id "{input_params['target_client_id']} failed""")
+            try:
+                role_name = input_params['client_role_name']
+                keycloak_admin.delete_client_role(client_role_id=hashed_client_id, role_name=role_name)
+                print(f"""create client role {role_name} in client "{input_params['target_client_id']}" success""")
+            except Exception as inner_e:
+                print(inner_e)
+                raise Exception('create client role on keycloak failed')
+            keycloak_openid.logout(keycloak_admin.connection.token['refresh_token'])
+        except Exception as e:
+            print(e)
+            print(f"""create client role {role_name} in client "{input_params['target_client_id']}" failed""")
+            keycloak_openid.logout(keycloak_admin.connection.token['refresh_token'])
+            sys.exit(1)
   - name: create-client
     inputs:
       parameters:
       - name: server_url
-        value: http://donggyu-keycloak.taco-cat.xyz/auth/
+        value: http://tks-console-dev.taco-cat.xyz/auth/
       - name: target_realm_name
         value: test3
       - name: target_client_id
@@ -474,12 +554,12 @@ spec:
         from kubernetes import client, config
         import sys
         import base64
-        input_params = {'server_url': '{{workflow.parameters.server_url}}', 'target_realm_name': '{{workflow.parameters.target_realm_name}}', 'target_client_id': '{{workflow.parameters.target_client_id}}', 'keycloak_credential_secret_name': '{{workflow.parameters.keycloak_credential_secret_name}}', 'keycloak_credential_secret_namespace': '{{workflow.parameters.keycloak_credential_secret_namespace}}'}
+        input_params = {'server_url': '{{inputs.parameters.server_url}}', 'target_realm_name': '{{inputs.parameters.target_realm_name}}', 'target_client_id': '{{inputs.parameters.target_client_id}}', 'keycloak_credential_secret_name': '{{inputs.parameters.keycloak_credential_secret_name}}', 'keycloak_credential_secret_namespace': '{{inputs.parameters.keycloak_credential_secret_namespace}}'}
 
         def get_kubernetes_api(local=False):
             if local:
                 import os
-                kubeconfig_path = os.path.expandvars('$HOME/donggyu_kubeconfig/kubeconfig_donggyu-test')
+                kubeconfig_path = os.path.expandvars('$HOME/.kube/config')
                 config.load_kube_config(config_file=kubeconfig_path)
             else:
                 config.load_incluster_config()
@@ -529,7 +609,7 @@ spec:
     inputs:
       parameters:
       - name: server_url
-        value: http://donggyu-keycloak.taco-cat.xyz/auth/
+        value: http://tks-console-dev.taco-cat.xyz/auth/
       - name: target_realm_name
         value: test3
       - name: target_client_id
@@ -556,12 +636,12 @@ spec:
         import sys
         import base64
         import json
-        input_params = {'server_url': '{{workflow.parameters.server_url}}', 'target_realm_name': '{{workflow.parameters.target_realm_name}}', 'target_client_id': '{{workflow.parameters.target_client_id}}', 'keycloak_credential_secret_name': '{{workflow.parameters.keycloak_credential_secret_name}}', 'keycloak_credential_secret_namespace': '{{workflow.parameters.keycloak_credential_secret_namespace}}', 'client_role_name': '{{workflow.parameters.client_role_name}}', 'client_secret_enabled': '{{workflow.parameters.client_secret_enabled}}', 'client_secret_value': '{{workflow.parameters.client_secret_value}}'}
+        input_params = {'server_url': '{{inputs.parameters.server_url}}', 'target_realm_name': '{{inputs.parameters.target_realm_name}}', 'target_client_id': '{{inputs.parameters.target_client_id}}', 'keycloak_credential_secret_name': '{{inputs.parameters.keycloak_credential_secret_name}}', 'keycloak_credential_secret_namespace': '{{inputs.parameters.keycloak_credential_secret_namespace}}', 'client_role_name': '{{inputs.parameters.client_role_name}}', 'client_secret_enabled': '{{inputs.parameters.client_secret_enabled}}', 'client_secret_value': '{{inputs.parameters.client_secret_value}}'}
 
         def get_kubernetes_api(local=False):
             if local:
                 import os
-                kubeconfig_path = os.path.expandvars('$HOME/donggyu_kubeconfig/kubeconfig_donggyu-test')
+                kubeconfig_path = os.path.expandvars('$HOME/.kube/config')
                 config.load_kube_config(config_file=kubeconfig_path)
             else:
                 config.load_incluster_config()
