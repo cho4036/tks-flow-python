@@ -32,7 +32,12 @@ def get_secret(k8s_client, secret_name, secret_namespace):
     decoded_data = base64.b64decode(encoded_data).decode('utf-8')
     return decoded_data
 
+def input_validation(origin_input_params):
+    if not origin_input_params['server_url'][-1] == '/':
+        origin_input_params['server_url'] += '/'
 
+
+input_validation(input_params)
 k8s_client = get_kubernetes_api(local=False)
 
 try:

@@ -66,7 +66,12 @@ def create_client(url, realm_name, client_id, token):
     else:
         raise Exception(response.text)
 
+def input_validation(origin_input_params):
+    if not origin_input_params['server_url'][-1] == '/':
+        origin_input_params['server_url'] += '/'
 
+
+input_validation(input_params)
 k8s_client = get_kubernetes_api(local=False)
 
 try:
