@@ -13,7 +13,7 @@ input_params = {
     'keycloak_credential_secret_namespace': 'keycloak',
 
     'client_role_name': 'admin',
-    'user_name': 'user1',
+    'user_names': '["user1"]',
 }
 
 
@@ -61,7 +61,7 @@ keycloak_connection = KeycloakOpenIDConnection(
     user_realm_name='master',
     username='admin',
     password=secret,
-    verify=True,
+    verify=False,
 )
 keycloak_openid = KeycloakOpenID(
     server_url=input_params['server_url'],
@@ -93,17 +93,19 @@ try:
         print(inner_e)
         raise Exception(f'get client role "{input_params["client_role_name"]}" failed')
 
-    try:
-        idOfUser = keycloak_admin.get_user_id(username=input_params["user_name"])
-        print(f'id of user "{input_params["user_name"]}" is "{idOfUser}".')
-    except Exception as inner_e:
-        print(inner_e)
-        raise Exception(f'get user "{input_params["user_name"]}" failed')
+    input_params["user_names"] = json.loads(input_params["user_names"])
+    for user in input_params["user_names"]:
+        try:
+            idOfUser = keycloak_admin.get_user_id(username=user)
+            print(f'id of user "{user}" is "{idOfUser}".')
+        except Exception as inner_e:
+            print(inner_e)
+            raise Exception(f'get user "{user}" failed')
 
     try:
         keycloak_admin.delete_client_roles_of_user(client_id=hashed_client_id, user_id=idOfUser,
                                                    roles=[{'id': idOfClientRole, 'name': input_params["client_role_name"]}])
-        print(f'un-assign client role "{input_params["client_role_name"]}" to user "{input_params["user_name"]}" success')
+        print(f'un-assign client role "{input_params["client_role_name"]}" to user "{input_params["user_names"]}" success')
     except Exception as inner_e:
         print(inner_e)
         raise Exception('un-assign client role to user on keycloak failed')
@@ -111,6 +113,6 @@ try:
     keycloak_openid.logout(keycloak_admin.connection.token['refresh_token'])
 except Exception as e:
     print(e)
-    print(f'un-assign client role "{input_params["client_role_name"]}" to user "{input_params["user_name"]}" failed')
+    print(f'un-assign client role "{input_params["client_role_name"]}" to user "{input_params["user_names"]}" failed')
     keycloak_openid.logout(keycloak_admin.connection.token['refresh_token'])
     sys.exit(1)

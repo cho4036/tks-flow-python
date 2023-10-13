@@ -7,12 +7,13 @@ import json
 input_params = {
     'server_url': 'http://tks-console-dev.taco-cat.xyz/auth/',
     'target_realm_name': 'test3',
-    'target_client_id': 'k8s-oidc6',
     'keycloak_credential_secret_name': 'keycloak',
     'keycloak_credential_secret_namespace': 'keycloak',
+}
 
-    'client_role_name': 'admin',
-    'user_names': '["user1"]',
+output_file_path = "/tmp/output.json"
+output_params = {
+    'users': [],  # List of Keycloak user objects
 }
 
 def get_kubernetes_api(local=False):
@@ -32,6 +33,7 @@ def get_secret(k8s_client, secret_name, secret_namespace):
     encoded_data = secret_obj.data.get('admin-password')
     decoded_data = base64.b64decode(encoded_data).decode('utf-8')
     return decoded_data
+
 
 def input_validation(origin_input_params):
     if not origin_input_params['server_url'][-1] == '/':
@@ -73,43 +75,31 @@ except Exception as e:
     print(f'login to {input_params["server_url"]} failed')
     sys.exit(1)
 
-
 try:
-    try:
-        hashed_client_id = keycloak_admin.get_client_id(client_id=input_params["target_client_id"])
-        print(f'hashed_client_id of client id "{input_params["target_client_id"]}" is "{hashed_client_id}".')
-    except Exception as inner_e:
-        print(inner_e)
-        raise Exception(f'get client id "{input_params["target_client_id"]} failed')
+    users = keycloak_admin.get_users()
+    print(f'get users success')
 
+    name_list = []
+    for user in users:
+        name_list.append(user['username'])
     try:
-        idOfClientRole = keycloak_admin.get_client_role_id(client_id=hashed_client_id,
-                                                           role_name=input_params["client_role_name"])
-        print(f'client role id in client id "{input_params["target_client_id"]}" is "{idOfClientRole}".')
-    except Exception as inner_e:
-        print(inner_e)
-        raise Exception(f'get client role "{input_params["client_role_name"]}" failed')
+        data = {
+            'user_names': name_list
+        }
+        with open(output_file_path, "w") as f:
+            json.dump(data, f)
 
-    input_params["user_names"] = json.loads(input_params["user_names"])
-    for user in input_params["user_names"]:
-        try:
-            idOfUser = keycloak_admin.get_user_id(username=user)
-            print(f'id of user "{user}" is "{idOfUser}".')
-        except Exception as inner_e:
-            print(inner_e)
-            raise Exception(f'get user "{user}" failed')
+        print(f"Users data saved to {output_file_path}")
 
-    try:
-        keycloak_admin.assign_client_role(client_id=hashed_client_id, user_id=idOfUser,
-                                          roles=[{'id': idOfClientRole, 'name': input_params["client_role_name"]}])
-        print(f'assign client role "{input_params["client_role_name"]}" to user "{input_params["user_names"]}" success')
-    except Exception as inner_e:
-        print(inner_e)
-        raise Exception(f'assign client role to user on keycloak failed')
+    except Exception as e:
+        print(e)
+        print(f'failed to save users data')
+        sys.exit(1)
 
     keycloak_openid.logout(keycloak_admin.connection.token['refresh_token'])
+
 except Exception as e:
     print(e)
-    print(f'assign client role "{input_params["client_role_name"]}" to user "{input_params["user_names"]}" failed')
+    print(f'get users failed')
     keycloak_openid.logout(keycloak_admin.connection.token['refresh_token'])
     sys.exit(1)

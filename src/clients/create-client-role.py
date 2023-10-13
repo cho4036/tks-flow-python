@@ -32,6 +32,7 @@ def get_secret(k8s_client, secret_name, secret_namespace):
     decoded_data = base64.b64decode(encoded_data).decode('utf-8')
     return decoded_data
 
+
 def input_validation(origin_input_params):
     if not origin_input_params['server_url'][-1] == '/':
         origin_input_params['server_url'] += '/'
@@ -57,7 +58,7 @@ keycloak_connection = KeycloakOpenIDConnection(
     user_realm_name='master',
     username='admin',
     password=secret,
-    verify=True,
+    verify=False,
 )
 keycloak_openid = KeycloakOpenID(
     server_url=input_params['server_url'],
@@ -87,7 +88,8 @@ try:
             payload={
                 'name': role_name,
                 'clientRole': True,
-            }
+            },
+            skip_exists=True,
         )
         print(f'create client role "{role_name}" in client "{input_params["target_client_id"]}" success')
     except Exception as inner_e:
@@ -97,6 +99,7 @@ try:
     keycloak_openid.logout(keycloak_admin.connection.token['refresh_token'])
 except Exception as e:
     print(e)
-    print(f'create client role {role_name} in client "{input_params["target_client_id"]}" failed')
+    print(
+        f'create client role "{input_params["client_role_name"]}" in client "{input_params["target_client_id"]}" failed')
     keycloak_openid.logout(keycloak_admin.connection.token['refresh_token'])
     sys.exit(1)

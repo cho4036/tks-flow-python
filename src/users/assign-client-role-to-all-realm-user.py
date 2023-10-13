@@ -12,7 +12,6 @@ input_params = {
     'keycloak_credential_secret_namespace': 'keycloak',
 
     'client_role_name': 'admin',
-    'user_names': '["user1"]',
 }
 
 def get_kubernetes_api(local=False):
@@ -90,19 +89,15 @@ try:
         print(inner_e)
         raise Exception(f'get client role "{input_params["client_role_name"]}" failed')
 
-    input_params["user_names"] = json.loads(input_params["user_names"])
-    for user in input_params["user_names"]:
-        try:
-            idOfUser = keycloak_admin.get_user_id(username=user)
-            print(f'id of user "{user}" is "{idOfUser}".')
-        except Exception as inner_e:
-            print(inner_e)
-            raise Exception(f'get user "{user}" failed')
-
     try:
-        keycloak_admin.assign_client_role(client_id=hashed_client_id, user_id=idOfUser,
-                                          roles=[{'id': idOfClientRole, 'name': input_params["client_role_name"]}])
-        print(f'assign client role "{input_params["client_role_name"]}" to user "{input_params["user_names"]}" success')
+        users = keycloak_admin.get_users()
+        for user in users:
+            username = user['username']
+            idOfUser = keycloak_admin.get_user_id(username=username)
+            print(f'id of user "{username}" is "{idOfUser}".')
+            keycloak_admin.assign_client_role(client_id=hashed_client_id, user_id=idOfUser,
+                                              roles=[{'id': idOfClientRole, 'name': input_params["client_role_name"]}])
+            print(f'assign client role "{input_params["client_role_name"]}" to user "{username}" success')
     except Exception as inner_e:
         print(inner_e)
         raise Exception(f'assign client role to user on keycloak failed')
@@ -110,6 +105,6 @@ try:
     keycloak_openid.logout(keycloak_admin.connection.token['refresh_token'])
 except Exception as e:
     print(e)
-    print(f'assign client role "{input_params["client_role_name"]}" to user "{input_params["user_names"]}" failed')
+    print(f'assign client role "{input_params["client_role_name"]}" to users failed')
     keycloak_openid.logout(keycloak_admin.connection.token['refresh_token'])
     sys.exit(1)

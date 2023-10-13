@@ -1,4 +1,4 @@
-from keycloak import KeycloakOpenID
+from keycloak import KeycloakOpenID, KeycloakAdmin, KeycloakOpenIDConnection
 import requests
 from kubernetes import client, config
 import sys
@@ -80,10 +80,21 @@ except Exception as e:
     print(f'failed to get secret "{secret_name}" in "{secret_namespace}" namespace')
     sys.exit(1)
 
+keycloak_connection = KeycloakOpenIDConnection(
+    server_url=input_params['server_url'],
+    client_id='admin-cli',
+    realm_name=input_params['target_realm_name'],
+    user_realm_name='master',
+    username='admin',
+    password=secret,
+    verify=False,
+)
+
 keycloak_openid = KeycloakOpenID(
     server_url=input_params['server_url'],
     client_id='admin-cli',
     realm_name='master',
+    verify=False,
 )
 
 token = keycloak_openid.token(
@@ -93,8 +104,27 @@ token = keycloak_openid.token(
 )
 
 try:
-    create_client(input_params['server_url'], input_params['target_realm_name'], input_params['target_client_id'], token)
-    print(f'create client "{input_params["target_client_id"]}" success')
+    try:
+        keycloak_admin = KeycloakAdmin(connection=keycloak_connection)
+        print(f'login to {input_params["server_url"]} success')
+    except Exception as e:
+        print(e)
+        print(f'login to {input_params["server_url"]} failed')
+        sys.exit(1)
+
+    try:
+        hashed_client_id = keycloak_admin.get_client_id(input_params['target_client_id'])
+    except Exception as inner_e:
+        print(inner_e)
+        raise Exception(f'get client with id "{input_params["target_client_id"]}" failed')
+    finally:
+        keycloak_openid.logout(keycloak_admin.connection.token['refresh_token'])
+
+    if hashed_client_id:
+        print("client already exists")
+    else:
+        create_client(input_params['server_url'], input_params['target_realm_name'], input_params['target_client_id'], token)
+        print(f'create client "{input_params["target_client_id"]}" success')
     keycloak_openid.logout(token['refresh_token'])
 except Exception as e:
     print(e)

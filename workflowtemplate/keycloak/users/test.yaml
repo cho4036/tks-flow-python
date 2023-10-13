@@ -1,0 +1,39 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: keycloak-user-testcode
+  namespace: argo
+spec:
+  entrypoint: main
+  arguments:
+    parameters:
+      - name: keycloak_url
+        value: "http://tks-console-dev.taco-cat.xyz/auth"
+  volumes:
+    - name: output-volume
+      emptyDir: {}
+    - name: config
+      secret:
+        secretName: tks-admin-kubeconfig-secret
+  templates:
+    - name: main
+      steps:
+        - - name: assign-client-role-to-all-realm-user
+            templateRef:
+              name: keycloak-user
+              template: assign-client-role-to-all-realm-user
+            arguments:
+              parameters:
+                - name: server_url
+                  value: "{{workflow.parameters.keycloak_url}}"
+                - name: target_realm_name
+                  value: "master"
+                - name: target_client_id
+                  value: "admin-cluster-k8s-api"
+                - name: keycloak_credential_secret_name
+                  value: "keycloak"
+                - name: keycloak_credential_secret_namespace
+                  value: "keycloak"
+                - name: client_role_name
+                  value: "system:masters"
+

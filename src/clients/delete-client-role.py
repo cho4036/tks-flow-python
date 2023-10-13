@@ -6,7 +6,7 @@ import base64
 input_params = {
     'server_url': 'http://tks-console-dev.taco-cat.xyz/auth/',
     'target_realm_name': 'test3',
-    'target_client_id': 'k8s-oidc6',
+    'target_client_id': 'test-client2',
     'keycloak_credential_secret_name': 'keycloak',
     'keycloak_credential_secret_namespace': 'keycloak',
 
@@ -38,7 +38,7 @@ def input_validation(origin_input_params):
 
 
 input_validation(input_params)
-k8s_client = get_kubernetes_api(local=False)
+k8s_client = get_kubernetes_api(local=True)
 
 try:
     secret_name = input_params['keycloak_credential_secret_name']
@@ -57,7 +57,7 @@ keycloak_connection = KeycloakOpenIDConnection(
     user_realm_name='master',
     username='admin',
     password=secret,
-    verify=True,
+    verify=False,
 )
 keycloak_openid = KeycloakOpenID(
     server_url=input_params['server_url'],

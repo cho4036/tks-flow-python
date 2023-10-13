@@ -62,10 +62,8 @@ def create_client_scope_mapper(url, realm_name, client_id, hashed_client_id, tok
         },
     }
     response = requests.post(url + path, headers=headers, json=data)
-    if response.status_code == 201:
+    if response.status_code == 201 or response.status_code == 409:
         print(f'create client scope mapper {client_id} success')
-    elif response.status_code == 409:
-        raise Exception(response.text)
     else:
         raise Exception(response.text)
 
@@ -94,7 +92,7 @@ keycloak_connection = KeycloakOpenIDConnection(
     user_realm_name='master',
     username='admin',
     password=secret,
-    verify=True,
+    verify=False,
 )
 keycloak_openid = KeycloakOpenID(
     server_url=input_params['server_url'],

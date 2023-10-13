@@ -74,7 +74,7 @@ keycloak_connection = KeycloakOpenIDConnection(
     user_realm_name='master',
     username='admin',
     password=secret,
-    verify=True,
+    verify=False,
 )
 
 keycloak_openid = KeycloakOpenID(
