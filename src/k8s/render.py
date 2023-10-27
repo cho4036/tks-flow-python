@@ -8,13 +8,14 @@ current_script_path = os.path.dirname(os.path.abspath(__file__))
 # 디렉토리 이름
 current_script_dirname = os.path.basename(current_script_path)
 # template 파일의 경로
-template_dir_path = os.path.join(current_script_path, f'../../workflowtemplate/keycloak/{current_script_dirname}')
+template_dir_path = os.path.join(current_script_path, f'../../workflowtemplate/k8s/{current_script_dirname}')
 # 현재 스크립트의 위치를 기준으로 상대 경로로 base_template.yaml의 경로 지정
 base_template_path = os.path.join(template_dir_path, 'base-template.yaml')
 
 image_name = 'harbor-cicd.taco-cat.xyz/dev/python-keycloak-cli:v0.1.0'
 
 print("If you want to add output_params, add output_params variable on top of python script")
+
 class ReplaceInputParams(ast.NodeTransformer):
     def visit_Assign(self, node):
         if any(target.id == "input_params" for target in node.targets if isinstance(target, ast.Name)):

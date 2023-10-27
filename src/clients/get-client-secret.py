@@ -1,9 +1,11 @@
 from keycloak import KeycloakOpenID, KeycloakAdmin, KeycloakOpenIDConnection
+import requests
 from kubernetes import client, config
 import sys
 import base64
-import secrets
-import string
+import json
+
+output_params = {}
 
 input_params = {
     'server_url': 'http://tks-console-dev.taco-cat.xyz/auth/',
@@ -11,10 +13,8 @@ input_params = {
     'target_client_id': 'test-client2',
     'keycloak_credential_secret_name': 'keycloak',
     'keycloak_credential_secret_namespace': 'keycloak',
-
-    'client_secret_enabled': 'true',
-    'client_secret_value': '',
 }
+
 
 
 def get_kubernetes_api(local=False):
@@ -34,6 +34,28 @@ def get_secret(k8s_client, secret_name, secret_namespace):
     encoded_data = secret_obj.data.get('admin-password')
     decoded_data = base64.b64decode(encoded_data).decode('utf-8')
     return decoded_data
+
+
+def get_client_secret(url, realm_name, client_id, token):
+    # if url end with '/', remove it
+    if url[-1] == '/':
+        url = url[:-1]
+    path = f'/admin/realms/{realm_name}/clients'
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token['access_token'],
+    }
+    params = {
+        'clientId': client_id,
+    }
+    response = requests.get(url + path, headers=headers, params=params)
+    if response.status_code == 200:
+        client_data = response.json()
+        if client_data:
+            client_secret = client_data[0]['secret']
+            return client_secret
+        else:
+            print(f"No client found with clientId: {client_id}")
 
 
 def input_validation(origin_input_params):
@@ -69,6 +91,7 @@ keycloak_openid = KeycloakOpenID(
     realm_name='master',
 )
 
+
 try:
     keycloak_admin = KeycloakAdmin(connection=keycloak_connection)
     print(f'login to {input_params["server_url"]} success')
@@ -84,30 +107,27 @@ try:
         client = keycloak_admin.get_client(client_id=hashed_client_id)
     except Exception as inner_e:
         print(inner_e)
-        raise Exception(f'get client id "{input_params["target_client_id"]} failed')
+        raise Exception(f'get client id "{input_params["target_client_id"]}" failed')
 
     try:
-        if input_params['client_secret_enabled'] == 'true':
-            if input_params['client_secret_value'] == '':
-                characters = string.ascii_letters + string.digits  # 대문자, 소문자, 숫자 포함
-                client['secret'] = ''.join(secrets.choice(characters) for i in range(32))
-            else:
-                client['secret'] = input_params['client_secret_value']
-            client['publicClient'] = False
-            keycloak_admin.update_client(client_id=hashed_client_id, payload=client)
-        else:
-            client['publicClient'] = True
-            keycloak_admin.update_client(client_id=hashed_client_id, payload=client)
-            print(f'delete client secret of client id "{input_params["target_client_id"]}" on keycloak')
+        client_secret = get_client_secret(input_params['server_url'], input_params['target_realm_name'],
+                                          input_params['target_client_id'], keycloak_admin.connection.token)
+        print(f'client secret of client id "{input_params["target_client_id"]}" is "{client_secret}"')
+
+        output_params['client_secret'] = client_secret
+        print("write client secret to /out/client_secret.txt")
+        with open('/out/client_secret.txt', 'w') as file:
+            file.write(client_secret)
+
     except Exception as inner_e:
         print(inner_e)
-        raise Exception(f'update client id "{input_params["target_client_id"]} failed')
+        raise Exception(f'get client secret of client id "{input_params["target_client_id"]}" failed')
 
-    print(f'update client "{input_params["target_client_id"]}" success')
+    print(f'get client secret success')
     keycloak_openid.logout(keycloak_admin.connection.token['refresh_token'])
 
 except Exception as e:
     print(e)
-    print('create client failed')
+    print('Get client secret failed')
     keycloak_openid.logout(keycloak_admin.connection.token['refresh_token'])
     sys.exit(1)

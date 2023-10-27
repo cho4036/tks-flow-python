@@ -14,7 +14,7 @@ base_template_path = os.path.join(template_dir_path, 'base-template.yaml')
 
 image_name = 'harbor-cicd.taco-cat.xyz/dev/python-keycloak-cli:v0.1.0'
 
-
+print("If you want to add output_params, add output_params variable on top of python script")
 class ReplaceInputParams(ast.NodeTransformer):
     def visit_Assign(self, node):
         if any(target.id == "input_params" for target in node.targets if isinstance(target, ast.Name)):
@@ -43,18 +43,22 @@ yaml.add_representer(str, str_presenter)
 
 
 def extract_input_params(script_path):
+    output_exist = False
     with open(script_path, "r") as f:
         tree = ast.parse(f.read())
         for node in tree.body:
             if isinstance(node, ast.Assign):
                 for target in node.targets:
+                    if target.id == "output_params":
+                        print("Detected output_params variable!")
+                        output_exist = True
                     if target.id == "input_params":
                         if isinstance(node.value, ast.Dict):
                             keys = [k.s for k in node.value.keys]
                             values = [v.s for v in node.value.values]
                             # values = [f"{{{{inputs.parameters.{k.s}}}}}" for k in node.value.keys]
-                            return dict(zip(keys, values))
-        return {}
+                            return dict(zip(keys, values)), output_exist
+        return {}, output_exist
 
 
 with open(base_template_path, "r") as template_file:
@@ -71,7 +75,10 @@ for filename in os.listdir(current_script_path):
 
         # 파이썬 스크립트에서 input_params 가져오기
         script_path = os.path.join(current_script_path, filename)
-        input_params = extract_input_params(script_path)
+        input_params, output_exist = extract_input_params(script_path)
+        if output_exist:
+            print(f"file {filename} has output_exist")
+            print("Not support output automation yet. So write output processing on workflow it manually")
 
         with open(script_path, 'r') as f:
             script_content = f.read()
